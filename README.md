@@ -4,6 +4,7 @@
 [![LightGBM](https://img.shields.io/badge/LightGBM-4.0%2B-green.svg)](https://lightgbm.readthedocs.io/)
 [![Dataset](https://img.shields.io/badge/Dataset-Prudential%20Life%20Insurance-purple.svg)](https://www.kaggle.com/competitions/prudential-life-insurance-assessment)
 [![Domain](https://img.shields.io/badge/Domain-Life%20Insurance%20Underwriting-orange.svg)](#)
+[![Tests](https://img.shields.io/badge/Tests-Pytest%20Passing-brightgreen.svg)](#)
 
 Repositori ini mengimplementasikan sistem otomasi penilaian risiko underwriting (*Automated Underwriting System*) untuk lini produk asuransi jiwa berbasis machine learning. Sistem ini mengklasifikasikan aplikasi calon nasabah ke dalam **8 tingkat risiko ordinal (*Response 1 - 8*)** dengan tujuan memangkas waktu proses persetujuan polis dari berminggu-minggu menjadi instan.
 
@@ -26,12 +27,14 @@ $$\kappa = 1 - \frac{\sum_{i,j} w_{ij} O_{ij}}{\sum_{i,j} w_{ij} E_{ij}}, \quad 
 ## 2. Struktur Repositori
 
 ```
-├── data/           # Dataset mentah & hasil ekstrak (train.csv, test.csv, sample_submission.csv)
-├── images/         # Grafik plot hasil render dari Jupyter (300 DPI)
-│   ├── underwriting_risk_eda.png
-│   └── underwriting_confusion_matrix.png
-├── notebook.ipynb  # Mesin pemrosesan: HANYA berisi impor, olah data, perhitungan statistik, dan pemodelan
-└── README.md       # Laporan utama: Pembahasan bisnis, rumus, tabel metrik, grafik tersemat, dan rekomendasi
+├── .gitignore          # Konfigurasi pengabaian cache Git
+├── data/               # Dataset mentah & hasil ekstrak (train.csv, test.csv, sample_submission.csv)
+├── images/             # Grafik plot hasil render dari Jupyter & SHAP (300 DPI)
+├── models/             # Binary model pipeline ter-serialize (underwriting_pipeline.joblib)
+├── src/                # Modular Python inference engine (UnderwritingEngine)
+├── tests/              # Automated unit tests (Pytest)
+├── notebook.ipynb      # Mesin pemrosesan: Impor, olah data, perhitungan statistik, dan pemodelan
+└── README.md           # Laporan utama: Pembahasan bisnis, rumus, tabel metrik, grafik tersemat, dan rekomendasi
 ```
 
 ---
@@ -65,7 +68,36 @@ Evaluasi performa model diuji pada data pengujian terisolasi (*holdout test set*
 
 ---
 
-## 5. Rekomendasi Bisnis & Operasional
+## 5. Explainable AI: Atribusi Fitur SHAP
+
+Untuk kepatuhan regulasi asuransi (*adverse action transparency*), kontribusi fitur risiko dijelaskan melalui nilai SHAP (*SHapley Additive exPlanations*):
+
+![SHAP Underwriting Plot](images/shap_underwriting_explainability.png)
+
+---
+
+## 6. Implementasi Modular & Pengujian Otomatis
+
+Modul inferensi otomatis tersedia di `src/underwriting_engine.py`:
+
+```python
+from src.underwriting_engine import UnderwritingEngine
+import pandas as pd
+
+engine = UnderwritingEngine()
+sample = pd.read_csv('data/train.csv', nrows=1)
+risk_grade = engine.assess_risk(sample)
+print(f"Keputusan Tingkat Risiko Underwriting: Kelas {risk_grade[0]}")
+```
+
+Jalankan automated unit test:
+```bash
+pytest tests/
+```
+
+---
+
+## 7. Rekomendasi Bisnis & Operasional
 
 1. **Straight-Through Processing (STP) untuk Kelas 8**:
    * Sekitar **74%** nasabah yang diprediksi sebagai kelas 8 terbukti akurat disetujui sebagai kelas 8 aktual. Perusahaan dapat menerapkan *Straight-Through Processing* (penerbitan polis instan tanpa review manual) khusus untuk klaster ini guna memangkas biaya operasional underwriting hingga 40%.
@@ -76,7 +108,7 @@ Evaluasi performa model diuji pada data pengujian terisolasi (*holdout test set*
 
 ---
 
-## 6. Panduan Menjalankan
+## 8. Panduan Menjalankan
 
 1. **Pasang Dependensi**:
    ```bash
